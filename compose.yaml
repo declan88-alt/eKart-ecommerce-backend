@@ -16,7 +16,7 @@ services:
       - frontendDomainUrl=${frontendDomainUrl}
       - stripeApiKey=${stripeApiKey}
       - REDIS_HOST=redis
-      - endpointSecret=${endpointSecret}
+      - stripeEndpointSecret=${stripeEndpointSecret}
       - emailUsername=${emailUsername}
       - emailPassword=${emailPassword}
 

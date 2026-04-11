@@ -83,7 +83,7 @@ jobs:
           adminPassword: "test_password"
           frontendDomainUrl: "http://localhost:3000"
           stripeApiKey: "test_stripe_api_key"
-          endpointSecret: "test_endpoint_secret"
+          stripeEndpointSecret: "test_endpoint_secret"
           emailUsername: "test@email.com"
           emailPassword: "test_email_password"
         run: |
