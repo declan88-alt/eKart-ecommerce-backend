@@ -1,0 +1,98 @@
+name: CI with Maven to automate build, test and deployment
+
+# https://docs.github.com/en/actions/tutorials/build-and-test-code/java-with-maven
+# Trigger when code changes in master branch
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    # Redis is required to pass the test
+    services:
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6 # latest checkout
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v5 # latest setup-java
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven # cache dependencies to speed up build
+
+      # Build
+      - name: Compile classes and resolve dependencies
+        run: mvn clean compile
+
+      # Test with Jacoco
+      - name: Execute unit tests and check test coverage
+        run: mvn test jacoco:report
+
+      # Generate test report and upload to actions
+      - name: Upload Test and Coverage Reports
+        uses: actions/upload-artifact@v4
+        if: always() # Generates reports even if a test fails
+        with:
+          name: test-and-coverage-reports
+          path: |
+            target/surefire-reports/
+            target/site/jacoco/
+
+  deployment:
+    name: Deployment with Docker
+    needs: build-and-test # Only deploy if tests pass
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build JAR without test
+        run: mvn package -DskipTests
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build-artifact
+          path: target/*.jar
+
+      # Deployment
+      - name: Configure Staging with Docker Compose
+        # Dummy environment variables to start the server as required in compose.yaml. Check maven-checks.yml
+        env:
+          jsonSecretKey: "test_secret_key"
+          adminPassword: "test_password"
+          frontendDomainUrl: "http://localhost:3000"
+          stripeApiKey: "test_stripe_api_key"
+          endpointSecret: "test_endpoint_secret"
+          emailUsername: "test@email.com"
+          emailPassword: "test_email_password"
+        run: |
+          docker compose -f compose.yaml up -d --build
+          echo "Waiting for services to start up and pass health checks"
+          sleep 20
+          
+          # Check running containers
+          docker ps
+
+          # Check system logs
+          docker compose logs app
