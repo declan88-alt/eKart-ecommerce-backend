@@ -40,6 +40,11 @@ public class ProductController {
     public ResponseEntity<EntityModel<ProductDto>> createProduct(
         @Valid @RequestBody ProductDto productDto
     ) {
+
+        if (productDto == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
         ProductDto createdProduct = this.productService.createProduct(productDto);
         EntityModel<ProductDto> productDtoEntityModel = EntityModel.of(
             createdProduct,
@@ -105,6 +110,9 @@ public class ProductController {
     public ResponseEntity<EntityModel<ProductDto>> getProduct(
         @NotNull @Min(value = 0L, message = "Product id cannot be negative") @PathVariable Long productId
     ) {
+
+        System.out.println("Fetching product with ID: " + productId);
+
         ProductDto productDto = this.productService.getProductById(productId);
         return ResponseEntity.ok(
                     EntityModel.of(
@@ -140,6 +148,9 @@ public class ProductController {
      */
     @GetMapping
     public ResponseEntity<CollectionModel<ProductDto>> getAllProducts(){
+
+        System.out.println("Fetching all products from database...");
+
         List<ProductDto> allProducts = this.productService.getAllProducts();
         return new ResponseEntity<>(
                 CollectionModel.of(
@@ -207,5 +218,4 @@ public class ProductController {
     public ResponseEntity<Long> getTotalProductsCount() {
         return ResponseEntity.ok(this.productService.getTotalProductsCount());
     }
-
 }
